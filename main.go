@@ -23,11 +23,14 @@ const (
 	EnvVarPort          = "PORT"
 
 	defaultPort = "8080"
-
-	FirestoreMatchCollection = "matches"
 )
 
-type apiStore struct {
+var (
+	FirestoreMatchCollection  = "matches"
+	FirestoreSolverCollection = "solvers"
+)
+
+type store struct {
 	log      logrus.FieldLogger
 	fsClient *firestore.Client
 }
@@ -39,6 +42,10 @@ func main() {
 	configuration := os.Getenv(EnvVarConfiguration)
 	// EnvVarService should always be set when running in a cloud run instance
 	onCloud := service != ""
+	if !onCloud {
+		FirestoreMatchCollection = fmt.Sprintf("%s-local", FirestoreMatchCollection)
+		FirestoreSolverCollection = fmt.Sprintf("%s-local", FirestoreSolverCollection)
+	}
 
 	ctx := context.Background()
 	log := logrus.New()
@@ -79,7 +86,7 @@ func main() {
 		port = defaultPort
 	}
 
-	s := &apiStore{
+	s := &store{
 		log:      log,
 		fsClient: fsClient,
 	}
@@ -98,6 +105,7 @@ func main() {
 
 	api := r.Group("/api")
 	api.POST("/match", s.handleStartMatch)
+	api.POST("/solver", s.handleOnboardSolver)
 
 	log.
 		WithFields(logrus.Fields{
