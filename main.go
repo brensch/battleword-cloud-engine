@@ -37,6 +37,7 @@ func main() {
 	service := os.Getenv(EnvVarService)
 	revision := os.Getenv(EnvVarRevision)
 	configuration := os.Getenv(EnvVarConfiguration)
+	// EnvVarService should always be set when running in a cloud run instance
 	onCloud := service != ""
 
 	ctx := context.Background()
@@ -45,13 +46,13 @@ func main() {
 	log.SetFormatter(&logrus.JSONFormatter{
 		DisableTimestamp: false,
 		TimestampFormat:  time.RFC3339Nano,
-		// this is required for google logs to correctly asses log severity
+		// This is required for google logs to correctly assess log severity
 		FieldMap: logrus.FieldMap{
 			logrus.FieldKeyLevel: "severity",
 		},
 	})
 
-	// if we're not in a GCP environment, we need to give firebase credentials
+	// If we're not in a GCP environment, we need to give firebase credentials
 	// otherwise the library automagically retrieves the service account from the environment
 	var conf *firebase.Config
 	var opts []option.ClientOption
@@ -61,16 +62,18 @@ func main() {
 	}
 	app, err := firebase.NewApp(ctx, conf, opts...)
 	if err != nil {
-		log.Fatalln(err)
+		// Should not continue if firebase is not working
+		log.WithError(err).Fatal("couldn't start firebase app")
 	}
 
 	fsClient, err := app.Firestore(ctx)
 	if err != nil {
-		log.Fatalln(err)
+		// Should not continue if firestore is not working
+		log.WithError(err).Fatal("couldn't start firebase app")
 	}
 	defer fsClient.Close()
 
-	// using env var since cloud run uses it
+	// Using env var since cloud run uses it
 	port := os.Getenv(EnvVarPort)
 	if port == "" {
 		port = defaultPort
@@ -81,7 +84,6 @@ func main() {
 		fsClient: fsClient,
 	}
 
-	// service being set indicates we're running on cloud run
 	if onCloud {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -89,7 +91,7 @@ func main() {
 	r := gin.New()
 	r.Use(cors.Default())
 
-	// only run http logger locally - cloud has native api call logs
+	// Only run http logger locally - cloud has native api call logs we shouldn't duplicate
 	if !onCloud {
 		r.Use(MiddlewareLogger(log))
 	}
@@ -111,7 +113,7 @@ func main() {
 
 func MiddlewareLogger(log *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// other handler can change c.Path so:
+		// Other handler can change c.Path so:
 		path := c.Request.URL.Path
 		start := time.Now()
 		c.Next()
