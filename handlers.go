@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -20,7 +21,7 @@ type StartMatchResponse struct {
 	Players []battleword.PlayerDefinition `json:"players,omitempty"`
 }
 
-func (s *apiStore) handleStartMatch(c *gin.Context) {
+func (s *store) handleStartMatch(c *gin.Context) {
 
 	var req StartMatchRequest
 	err := c.ShouldBindJSON(&req)
@@ -56,7 +57,9 @@ func (s *apiStore) handleStartMatch(c *gin.Context) {
 				case <-finishedCHAN:
 					finished = true
 				}
+
 				matchSnap := match.Snapshot()
+				s.log.WithField("match_id", matchSnap.UUID).Info("updating firestore")
 				_, err = s.fsClient.Collection(FirestoreMatchCollection).Doc(matchSnap.UUID).Set(context.Background(), matchSnap)
 				if err != nil {
 					s.log.WithError(err).Error("failed to write match to firestore")
@@ -84,5 +87,43 @@ func (s *apiStore) handleStartMatch(c *gin.Context) {
 	c.JSON(200, StartMatchResponse{
 		UUID:    finalSnap.UUID,
 		Players: playerDefinitions,
+	})
+}
+
+type OnboardSolverRequest struct {
+	URI string `json:"uri,omitempty"`
+}
+
+type OnboardSolverResponse struct {
+	Message          string                       `json:"message,omitempty"`
+	UUID             string                       `json:"uuid,omitempty"`
+	SolverDefinition *battleword.PlayerDefinition `json:"solver_definition,omitempty"`
+}
+
+func (s *store) handleOnboardSolver(c *gin.Context) {
+
+	var req OnboardSolverRequest
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	definition, firebaseID, err := s.OnboardURI(c.Request.Context(), req.URI)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	fmt.Println(definition)
+
+	c.JSON(200, OnboardSolverResponse{
+		Message:          "success",
+		UUID:             firebaseID,
+		SolverDefinition: &definition,
 	})
 }
