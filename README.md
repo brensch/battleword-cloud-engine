@@ -1,5 +1,7 @@
 # battleword-cloud-engine
-A version of the engine designed to run in the cloud. This is what the UI talks to. Matches are saved into firestore objects.
+A version of the engine designed to run in the cloud. This is what the UI talks to. Matches are saved into firestore objects. Wanted to keep firestore shenanigans out of main repo and make it mainly things that users may want to import themselves or that are necessary for demonstration purposes.
+
+This repo will eventually contain things like the ladder etc.
 
 ## Deploying
 
