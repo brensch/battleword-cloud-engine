@@ -72,7 +72,7 @@ func (s *store) handleStartMatch(c *gin.Context) {
 
 		}()
 
-		match.Start()
+		match.Start(context.Background())
 		finishedCHAN <- struct{}{}
 		match.Broadcast()
 
