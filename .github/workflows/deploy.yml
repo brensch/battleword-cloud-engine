@@ -1,11 +1,11 @@
-name: Deploy Prod
+name: Deploy Dev
 
 on:
   push:
-    branches: [ api/prod ]
+    branches: [ api ]
 
 jobs:
-  deploy-prod:
+  deploy-dev:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -18,8 +18,8 @@ jobs:
       with:
         workload_identity_provider: 'projects/339690027814/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
         service_account: 'github@battleword.iam.gserviceaccount.com'
-    - name: 'Deploy '
+    - name: 'Deploy'
       uses: 'google-github-actions/deploy-cloudrun@v0'
       with:
         source: '.'
-        service: 'cloud-engine-prod'
+        service: 'api'
