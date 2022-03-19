@@ -5,7 +5,7 @@ go 1.17
 require (
 	cloud.google.com/go/firestore v1.5.0
 	firebase.google.com/go/v4 v4.7.1
-	github.com/brensch/battleword v0.11.1
+	github.com/brensch/battleword v0.12.0
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/sirupsen/logrus v1.8.1
